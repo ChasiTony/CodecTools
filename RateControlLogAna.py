@@ -195,20 +195,17 @@ class cProductionLog(object):
 if __name__ == '__main__':
     argParser = argparse.ArgumentParser()
     argParser.add_argument("-log", nargs='?', default=None, help="log file")
-    argParser.add_argument("-debug", nargs='?', default=False, help="is RC debug trace exist")
+    argParser.add_argument("-debug", nargs='?', default=0, help="is RC debug trace exist")
     args = argParser.parse_args()
 
     if args.log is not None:
-        if args.debug:
+        if args.debug != 0:
             current_log = cCurrentLog()
             current_log.read_logs(args.log)
 
             max_exceed_times, max_exceed_times_ratio, max_br_burst_ratio, max_burst_ratio, avg_burst_ratio, period_exceed_ratio = \
                 current_log.check_different_settings()
             skip_ratio, skip_successive = current_log.get_skip_status()
-
-            current_log.plot_overall_graph()
-
         else:
             current_log = cProductionLog()
             current_log.read_logs(args.log)

@@ -40,7 +40,7 @@ def copy_one_frame(orig_yuv, tar_yuv, width, height, pos):
 
 
 class cCurrentLog(object):
-    def RateControlUtil(self):
+    def __init__(self):
         self.MAX_D_LAYER = 4
         self.basic_setting_match_re1 = RateControlUtil.SETTING_TYPE_RE
         self.setting_match_re = RateControlUtil.LAYER_SETTING_RE
@@ -125,6 +125,21 @@ class cCurrentLog(object):
         else:
             last_frame_time = 0
         return max(last_frame_time)
+
+    def get_settings(self, time, r):
+        cur_settings = {}
+        RateControlUtil.settings_log(time, r, cur_settings)
+        if self.usage_type == 0:
+            cur_settings['timewindow'] = 5000  # ms
+            cur_settings['fluctuation_range'] = 0.1
+        elif self.usage_type == 1:
+            cur_settings['timewindow'] = 10000  # ms
+            cur_settings['fluctuation_range'] = 0.3
+
+        cur_settings['target_bit_rate_upper'] = int(cur_settings['target_bit_rate'] * (1+cur_settings['fluctuation_range']) + 0.5)
+
+        self.settings.append(cur_settings)
+
 
     def read_logs(self, files):
         self.name = files
@@ -246,7 +261,7 @@ class cCurrentLog(object):
         for idx, item in enumerate(self.settings):
             start = self.settings[idx]['ts']
             if idx+1 == len(self.settings):
-                end = self.frames['timestamp'][-1]
+                end = self.frames[idx]['timestamp'][-1]
             else:
                 end = self.settings[idx+1]['ts']
             current_target_rate_upper = self.settings[idx]['target_bit_rate_upper']
@@ -254,8 +269,8 @@ class cCurrentLog(object):
             current_target = self.settings[idx]['target_bit_rate']
             current_tw = self.settings[idx]['timewindow']
 
-            max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, period_exceed_flag \
-                = self.check_bitrate_overflow(current_target, current_target_rate_upper, current_max_rate, current_tw, start, end)
+            exceed_max_times, max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, period_exceed_flag \
+                = self.check_bitrate_overflow(self.frames[idx], current_target, current_target_rate_upper, current_max_rate, current_tw, start, end)
 
             if max_exceed_times_ratio == -1:
                 continue
@@ -264,11 +279,10 @@ class cCurrentLog(object):
             overall_max_burst_ratio = max(max_burst_ratio, overall_max_burst_ratio)
             period_exceed += 1 if period_exceed_flag else 0
 
-        #self.plot_overall_graph()
         if isChecked:
-            return overall_max_exceed_times_ratio, overall_max_burst_ratio, (period_exceed*100/len(self.settings))
+            return exceed_max_times, overall_max_exceed_times_ratio, -1, overall_max_burst_ratio, -1, (period_exceed*100/len(self.settings))
         else:
-            return -1,-1,-1 ,-1
+            return -1,-1,-1 ,-1,-1,-1
 
     def check_one_setting(self, target_br, max_br):
         assert(len(self.settings) == 1)
@@ -285,7 +299,7 @@ class cCurrentLog(object):
         assert(target_br*1000 == current_target)
         assert( int(max_br*1000) == current_max_rate)
 
-        max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, period_exceed_flag \
+        max_exceed_times, max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, period_exceed_flag \
             = self.check_bitrate_overflow(self.frames[0], current_target, current_target_rate_upper, current_max_rate, current_tw, start, end)
 
         max_exceed_times, max_br_burst_ratio = self.check_max_br_overflow(self.frames[0], current_max_rate, start, end)
@@ -312,26 +326,25 @@ class cCurrentLog(object):
 
         period_exceed += 1 if period_exceed_flag else 0
 
-        #self.plot_graph(current_target, current_target_rate_upper, current_max_rate)
         return max_exceed_times, max_exceed_times_ratio, max_br_burst_ratio, max_burst_ratio, average_burst_ratio, \
                (period_exceed if max_exceed_times_ratio!= -1 else -1)
 
-    def check_bitrate_overflow(self, frame_list, current_target, current_target_upper, curret_max, current_tw,
+    def check_bitrate_overflow(self, frame_list, current_target, current_target_upper, current_max, current_tw,
                                start, end):
         if end<current_tw:
             sys.stdout.write("Sequence Length(%d) is not enough for analysis(%d)\n"
                                  %(end, current_tw))
-            return -1,-1,-1, False
+            return -1,-1,-1,-1, False
 
-        if curret_max > 0:
-            current_target_upper = min(curret_max, current_target_upper)
+        if current_max > 0:
+            current_target_upper = min(current_max, current_target_upper)
         sys.stdout.write("[Current Setting]Start=%d, End=%d, Tar=%d, TarUp=%d, Max=%d\n"
-                             %(start, end, current_target, current_target_upper, curret_max))
+                             %(start, end, current_target, current_target_upper, current_max))
 
         time_list, rate_list = self.generate_sectioned_rate(frame_list, start, end, current_tw)
 
         # check max-br
-        exceed_max_times = len([ item for item in rate_list if item > curret_max ])
+        exceed_max_times = len([ item for item in rate_list if item > current_max ])
         if exceed_max_times > 0:
             sys.stdout.write("[Checking Failed!] Exceed Exceed Max Times=%d\n"
                          %(exceed_max_times))
@@ -348,10 +361,10 @@ class cCurrentLog(object):
 
         self.section_time.extend(time_list)
         self.section_rates.extend(rate_list)
-        # self.plot_graph(current_target, current_target_upper, current_max)
+        self.plot_graph(frame_list, current_target, current_target_upper, current_max)
 
-        return max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, \
-               (period_average > curret_max or period_average > current_target_upper)
+        return exceed_max_times, max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, \
+               (period_average > current_max or period_average > current_target_upper)
 
 
     def check_max_br_overflow(self, frame_list, curret_max, start, end):
@@ -402,11 +415,11 @@ class cCurrentLog(object):
 
         return skip_percentage, max_successive
 
-    def plot_graph(self, current_target, current_target_uppper, current_max_rate):
+    def plot_graph(self, frame_list, current_target, current_target_uppper, current_max_rate):
         fig, axes = plt.subplots(3, 1, sharex=True)
 
         plt.xlabel('timestamp')
-        axes[0].plot(self.frames['timestamp'], self.frames['bits'], label='frame_bits')
+        axes[0].plot(frame_list['timestamp'], frame_list['bits'], label='frame_bits')
         #axes[0].legend(bbox_to_anchor=(0.3, 1.00, 1., .08))
 
         axes[1].plot(self.section_time, self.section_rates, 'o-', label='section_rates')
@@ -421,13 +434,13 @@ class cCurrentLog(object):
                                             linestyle='-', linewidth=1, label='max_bit_rate')
         #axes[1].legend(bbox_to_anchor=(0.3, 1.00, 1., .08))
 
-        axes[2].plot(self.frames['timestamp'], self.frames['min_qp'], 'b+', label='min_qp')
-        axes[2].plot(self.frames['timestamp'], self.frames['max_qp'], 'r+', label='max_qp')
-        axes[2].plot(self.frames['timestamp'], self.frames['average_qp'], 'go', label='average_qp')
+        axes[2].plot(frame_list['timestamp'], frame_list['min_qp'], 'b+', label='min_qp')
+        axes[2].plot(frame_list['timestamp'], frame_list['max_qp'], 'r+', label='max_qp')
+        axes[2].plot(frame_list['timestamp'], frame_list['average_qp'], 'go', label='average_qp')
         #axes[2].legend(bbox_to_anchor=(0.3, 1.00, 1., .08))
 
         plt.savefig('Results_Rates_%s.png' %self.name.split(os.sep)[-1])
-
+        plt.show()
 
 
     def get_skip_list(self):

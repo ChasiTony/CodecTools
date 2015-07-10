@@ -15,7 +15,6 @@ from BDRate import calculate_from_two_dicts, OneTestPoint, write_testpoint_to_cs
 DEBUG = 0
 
 
-
 def encode_one_yuv(exe_path, one_yuv, usage_type=0, qp=24):
     name = ((one_yuv.split(os.sep))[-1])
 
