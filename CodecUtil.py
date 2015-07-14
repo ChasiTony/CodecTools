@@ -57,7 +57,7 @@ def call_multilayer_encoder(input_name, usagetype, width, height, frame_rate, ta
     if '.yuv' not in input_name:
         input_name += '.yuv'
 
-    cmdline = '%s -org %s -utype %d -bf %s -sw %d -sh %d -frin %f -numtl 2 -rc %d -fs %d -trace 255 ' \
+    cmdline = '%s -org %s -utype %d -bf %s -sw %d -sh %d -frin %f -numtl 2 -rc %s -fs %d -trace 255 ' \
               % ("./h264enc", input_name, usagetype, bs_name,
                  width, height, frame_rate, rc_mode, frame_skip)
 
