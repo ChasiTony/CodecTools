@@ -97,14 +97,15 @@ class cProductionLog(object):
 
         current_file.close()
 
-    def calculate_stats(self, start_dt, end_dt, cur_th):
+    def calculate_stats(self, start_dt=None, end_dt=None, cur_th=None):
         for idx in range(len(self.stats)-1):
             dt1, ts1, bytes1 = self.stats[idx]
-            dt2, ts2, bytes2 =  self.stats[idx+1]
-            if dt1 < start_dt:
-                continue
-            if dt2 > end_dt:
-                return
+            dt2, ts2, bytes2 = self.stats[idx+1]
+            if cur_th is not None:
+                if dt1 < start_dt:
+                    continue
+                if dt2 > end_dt:
+                    return
 
             time1 = (dt2 - dt1).total_seconds()*1000
             time2 = (ts2 - ts1)
@@ -116,7 +117,7 @@ class cProductionLog(object):
             if delta_bytes<0:
                 continue
             cur_br = (delta_bytes*8 / time1)*1000
-            if cur_br > cur_th:
+            if cur_th is not None and cur_br > cur_th:
                 sys.stdout.write("Warning! Large BR%d at time %s\n"
                                  %(cur_br, dt2))
             self.dt_list.append(dt2)
@@ -129,6 +130,10 @@ class cProductionLog(object):
             self.calculate_stats(set1['ts'], set2['ts'],
                                  min(set1['max_bit_rate'], set1['target_bit_rate_upper']) if set1['max_bit_rate']!= 0 else set1['target_bit_rate_upper'])
 
+        if self.dt_list == []:
+            self.calculate_stats()
+
+
     def plot_overall_graph(self):
         max_d_layer = max([item['did'] for item in self.settings])
         axes_count = 2 if max_d_layer == 0 else (1+self.MAX_D_LAYER)
@@ -139,6 +144,7 @@ class cProductionLog(object):
         plt.xlabel('time')
 
         axes[0].plot(self.dt_list, self.br_list, label='actual_bit_rate')
+        axes[0].legend()
 
         if max_d_layer>0:
             for layer_idx in range(self.MAX_D_LAYER):
@@ -155,10 +161,12 @@ class cProductionLog(object):
                 cur_list = [item for item in self.layer_stats if item[1]==layer_idx]
                 if cur_list == []:
                     axes[layer_idx+1].plot(self.dt_list, self.br_list, label='actual_bit_rate')
+                    axes[layer_idx+1].legend()
                 else:
                     axes[layer_idx+1].plot([item[0] for item in cur_list],
                                  [item[2] for item in cur_list],
-                                 label='br_%d' %layer_idx)
+                                 label='layer_%d' %layer_idx)
+                    axes[layer_idx+1].legend()
 
         else:
             cur_list = [item for item in self.settings]
@@ -168,24 +176,25 @@ class cProductionLog(object):
                                  label=info)
             axes[1].plot([item['ts'] for item in self.settings],
                      [item['width']+item['height'] for item in self.settings], label='resolution')
+            axes[1].legend()
 
         axes_idx = 2 if max_d_layer==0 else (1+self.MAX_D_LAYER)
         if max(self.idr) > 0:
             axes[axes_idx].plot([item[0] for item in self.stats[1:]],
                                   RateControlUtil.get_derive(self.idr),
                                   '-o', label='idr_count')
+            axes[axes_idx].legend()
             axes_idx += 1
 
         if max(self.frame_skipped) > 0:
             axes[axes_idx].plot([item[0] for item in self.stats[1:]],
                                   RateControlUtil.get_derive(self.frame_skipped),
                                   '-o', label='frame_skipped_count')
+            axes[axes_idx].legend()
         x=[item[0] for item in self.stats[1:]]
         y=RateControlUtil.get_derive(self.frame_skipped)
         for p1,p2 in zip(x,y):
             print("%s,%d\n" %(p1,p2))
-
-        plt.legend()
 
         plt.savefig('RatesinLog.png')
         plt.show()

@@ -38,7 +38,6 @@ def copy_one_frame(orig_yuv, tar_yuv, width, height, pos):
     p.communicate()[1]
 
 
-
 class cCurrentLog(object):
     def __init__(self):
         self.MAX_D_LAYER = 4
@@ -420,7 +419,7 @@ class cCurrentLog(object):
 
         plt.xlabel('timestamp')
         axes[0].plot(frame_list['timestamp'], frame_list['bits'], label='frame_bits')
-        #axes[0].legend(bbox_to_anchor=(0.3, 1.00, 1., .08))
+        axes[0].legend()
 
         axes[1].plot(self.section_time, self.section_rates, 'o-', label='section_rates')
         sys.stdout.write("Line: x=%s; y=%s\n" %(self.section_time, self.section_rates))
@@ -432,14 +431,13 @@ class cCurrentLog(object):
         if (current_max_rate != 0):
             axes[1].axhline(y=current_max_rate, color='r',
                                             linestyle='-', linewidth=1, label='max_bit_rate')
-        #axes[1].legend(bbox_to_anchor=(0.3, 1.00, 1., .08))
 
         axes[2].plot(frame_list['timestamp'], frame_list['min_qp'], 'b+', label='min_qp')
         axes[2].plot(frame_list['timestamp'], frame_list['max_qp'], 'r+', label='max_qp')
         axes[2].plot(frame_list['timestamp'], frame_list['average_qp'], 'go', label='average_qp')
-        #axes[2].legend(bbox_to_anchor=(0.3, 1.00, 1., .08))
+        axes[2].legend()
 
-        plt.savefig('Results_Rates_%s.png' %self.name.split(os.sep)[-1])
+        plt.savefig('Results_Rates_%s_br%d.png' %(self.name.split(os.sep)[-1], current_target))
         plt.show()
 
 
