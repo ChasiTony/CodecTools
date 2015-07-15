@@ -318,9 +318,9 @@ class cCurrentLog(object):
         current_max_rate = max_br*1000
         current_tw = 5000
         period_exceed = 0
-
-        max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, period_exceed_flag \
+        max_exceed_times, max_exceed_times_ratio, max_burst_ratio, average_burst_ratio, period_exceed_flag\
             = self.check_bitrate_overflow(self.frames[did], current_target, current_target_rate_upper, current_max_rate, current_tw, start, end)
+       
         max_exceed_times, max_br_burst_ratio = self.check_max_br_overflow(self.frames[did], current_max_rate, start, end)
 
         period_exceed += 1 if period_exceed_flag else 0
@@ -585,19 +585,17 @@ def batch_encoder_test(enc_path, usage_type, bit_rate_list, common_fps, multi_la
                         current_log = cCurrentLog()
                         current_log.read_logs(log_name)
                         average_bit_rate = current_log.get_average_bit_rate()
-
                         for did in range(4):
                             if average_bit_rate[did] <= 0:
                                 continue
-
-                            max_exceed_times, max_exceed_times_ratio, max_burst_ratio, avg_burst_ratio, period_exceed_ratio \
+                            max_exceed_times, max_exceed_times_ratio, max_br_burst_ratio, max_burst_ratio, average_burst_ratio, period_exceed_flag \
                                 = current_log.check_one_setting_multi_layer(did, target_br[did], max_br[did])
 
                             skip_ratio, skip_successive = current_log.get_skip_status()
-                            fout.write('%s_layer%d, %d, %d, %d, %d, %f, %f, %f, %f, %d, %f, %f, %f, %d\n'
+                            fout.write('%s_layer%d, %s, %d, %d, %d, %f, %f, %f, %f, %d, %f, %f, %f, %d\n'
                                        %(bs_name, did, rc_mode_iter, frame_skip_iter, target_br[did],
                                          average_bit_rate[did], average_bit_rate[did]*100/(target_br[did]*1000),
-                                         0, max_burst_ratio, avg_burst_ratio, max_exceed_times, max_exceed_times_ratio, period_exceed_ratio, skip_ratio, skip_successive))
+                                         0, max_burst_ratio, average_burst_ratio, max_exceed_times, max_exceed_times_ratio, period_exceed_flag, skip_ratio, skip_successive))
 
 
 
