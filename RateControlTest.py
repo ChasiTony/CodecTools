@@ -522,10 +522,7 @@ def batch_encoder_test(enc_path, usage_type, bit_rate_list, common_fps, multi_la
     for frame_skip_iter in frame_skip_list:
         for rc_mode_iter in RC_MODE_LIST:
             for f in glob.glob(seq_path + os.sep + '*.yuv'):
-                r = resolution_re.search(f)
-                width = int(r.group(1))
-                height = int(r.group(2))
-                framerate = int(r.group(3))
+                width, height, framerate = CodecUtil.get_resolution_from_name(f)
 
                 max_item = 0
                 cur_bit_rate_list = []
@@ -630,8 +627,6 @@ if __name__ == '__main__':
 
     if args.time_window_camera and args.time_window_camera>1000:
         TIME_WINDOW = args.time_window_camera
-
-    resolution_re = re.compile(r'(\d+)x(\d+)_(\d+)')
 
     if args.multi_layer_encoding is None:
         camera_bit_rate_list = { 3600: [900, 1200, 1400, 1600], #1280x720

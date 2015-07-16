@@ -14,3 +14,4 @@ def get_did_from_resolution(width, height):
         return 1
     else:
         return 0
+

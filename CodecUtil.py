@@ -171,3 +171,21 @@ class cBatchPsnr(object):
 
 
 
+
+def get_resolution_from_name(f):
+    resolution_re = re.compile(r'(\d+)x(\d+)_(\d+)')
+    r = resolution_re.search(f)
+    if r is not None:
+        width = int(r.group(1))
+        height = int(r.group(2))
+        framerate = int(r.group(3))
+        return width, height, framerate
+
+    resolution_re2 = re.compile(r'(\d+)x(\d+)')
+    r = resolution_re.search(f)
+    if r is not None:
+        width = int(r.group(1))
+        height = int(r.group(2))
+        return width, height, 0
+
+    return 0, 0, 0
