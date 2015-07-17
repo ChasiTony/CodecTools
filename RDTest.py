@@ -13,48 +13,42 @@ import __init__, CodecUtil
 from BDRate import calculate_from_two_dicts, OneTestPoint, write_testpoint_to_csv
 
 DEBUG = 0
-
+PERFORMANCE_ONLY = False
 
 def encode_one_yuv(exe_path, one_yuv, usage_type=0, qp=24):
     name = ((one_yuv.split(os.sep))[-1])
 
-    width = 0
-    height = 0
-    match_re = re.compile(r'(\d+)x(\d+)')
-    r = match_re.search(name)
-    if r is not None:
-        width = int(r.groups()[0])
-        height = int(r.groups()[1])
-
-    frame_rate = 30
-    match_re2 = re.compile(r'\d+x\d+_(\d+)')
-    r = match_re2.search(name)
-    if r is not None:
-        frame_rate = int(r.groups()[0])
+    width, height, frame_rate = CodecUtil.get_resolution_from_name(name)
+    if frame_rate == 0:
+        frame_rate = 30
 
     # encoding
     current_path = os.getcwd()
     os.chdir(exe_path)
     print("current path is %s\n" %exe_path)
 
-    bs_name, log_name = CodecUtil.call_encoder_qp(one_yuv, usage_type, width, height, qp)
+    bs_name, log_name = CodecUtil.call_encoder_qp(one_yuv, usage_type, width, height, qp, ' -threadIdc 4 ')
     #deal with log file
     fps = CodecUtil.encoder_log_file(log_name)
     if fps == -1:
         return OneTestPoint(qp, 0, 0, 0, 0, 0)
 
-    # decoding
-    rec_yuv = bs_name+'_dec.yuv'
-    CodecUtil.decode(bs_name, rec_yuv)
+    if not PERFORMANCE_ONLY:
+        # decoding
+        rec_yuv = bs_name+'_dec.yuv'
+        CodecUtil.decode(bs_name, rec_yuv)
 
-    # psnr ing
-    bitrate, psnr_y, psnr_u, psnr_v = CodecUtil.calculate_psnr(width, height, one_yuv, rec_yuv,
-                                                     rec_yuv+'.log', bs_name, frame_rate)
+        # psnr ing
+        bitrate, psnr_y, psnr_u, psnr_v = CodecUtil.calculate_psnr(width, height, one_yuv, rec_yuv,
+                                                         rec_yuv+'.log', bs_name, frame_rate)
 
-    current_test_point = OneTestPoint(qp, bitrate, fps, psnr_y, psnr_u, psnr_v)
+        current_test_point = OneTestPoint(qp, fps, bitrate, psnr_y, psnr_u, psnr_v)
 
 
-    os.remove(rec_yuv)
+        os.remove(rec_yuv)
+    else:
+        current_test_point = OneTestPoint(qp, fps, 0, 0, 0, 0)
+
     os.chdir(current_path)
     return current_test_point
 
@@ -73,7 +67,7 @@ def process_one_exe(exe_path, yuv_list, usage_type):
             TestPoint_dict[yuv_name][qp] = result
 
 
-    write_testpoint_to_csv(exe_path, exe_path, TestPoint_dict)
+    write_testpoint_to_csv(exe_path, os.getcwd(), TestPoint_dict)
 
     return TestPoint_dict
 
@@ -83,6 +77,7 @@ if __name__ == '__main__':
     argParser.add_argument("exepath", nargs='+', help="exe path, you can specify multiple logpath seperated by space")
     argParser.add_argument("-yuvpath", nargs='?', default=None, help="yuv path")
     argParser.add_argument("-usagetype", nargs='?', default=None, help="camera=0 or screen=1")
+    argParser.add_argument("-performance_only", nargs='?', default=None, help="skip_psnr_test")
     args = argParser.parse_args()
 
     usage_type = 0
@@ -98,6 +93,9 @@ if __name__ == '__main__':
     if args.yuvpath is not None:
         default_yuv_path = args.yuvpath
 
+    if args.performance_only is not None:
+        PERFORMANCE_ONLY = True
+
     yuv_list = []
     for f in glob.glob(default_yuv_path + os.sep + '*.yuv'):
         yuv_list.append(f)
@@ -111,19 +109,20 @@ if __name__ == '__main__':
             dict = process_one_exe(one_exe_path, yuv_list, usage_type)
             dict_list.append(dict)
 
-    sys.stdout.write('Begin compare.. \n')
-    for i in range(len(args.exepath)):
-        if i==0:
-            continue
-        name0 = ((args.exepath[0].split(os.sep))[-1])
-        name1 = ((args.exepath[i].split(os.sep))[-1])
+    if not PERFORMANCE_ONLY:
+        sys.stdout.write('Begin compare.. \n')
+        for i in range(len(args.exepath)):
+            if i==0:
+                continue
+            name0 = ((args.exepath[0].split(os.sep))[-1])
+            name1 = ((args.exepath[i].split(os.sep))[-1])
 
-        current_path = os.getcwd()
-        os.chdir(args.exepath[i])
-        result_file = open("Result_%s_%s.csv" %(name0, name1), 'w')
-        calculate_from_two_dicts(result_file, dict_list[0], dict_list[i])
-        result_file.close()
-        os.chdir(current_path)
+            current_path = os.getcwd()
+            os.chdir(args.exepath[i])
+            result_file = open("Result_%s_%s.csv" %(name0, name1), 'w')
+            calculate_from_two_dicts(result_file, dict_list[0], dict_list[i])
+            result_file.close()
+            os.chdir(current_path)
 
 
 

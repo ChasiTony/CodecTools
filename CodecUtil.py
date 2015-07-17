@@ -32,12 +32,18 @@ def call_encoder_rc(input_name, usagetype, width, height, frame_rate, target_br,
     sys.stdout.write(p.communicate()[1])
     return bs_name, log_name
 
-def call_encoder_qp(input_name, usage_type, width, height, qp):
+def call_encoder_qp(input_name, usage_type, width, height, qp, additional_cmd=''):
     bs_name  = input_name.split(os.sep)[-1] + '_br' + str(qp) + '.264'
     log_name = input_name.split(os.sep)[-1] + '_br' + str(qp) + '.log'
 
-    cmdline = str('./h264enc ./welsenc.cfg -utype %d -numl 1 -lconfig 0 layer2.cfg -frms -1 -lqp 0 %d -rc -1 -org %s -bf %s -sw %d -sh %d -dw 0 %d -dh 0 %d >> %s'
-            % (usage_type, qp, input_name, bs_name, width, height,  width, height,
+    if os.path.isfile(bs_name):
+        os.remove(bs_name)
+    if os.path.isfile(log_name):
+        os.remove(log_name)
+    cmdline = str('./h264enc ./welsenc.cfg -utype %d -numl 1 -lconfig 0 layer2.cfg -frms -1 -lqp 0 %d -rc -1 -trace 7 '
+                  '-org %s -bf %s -sw %d -sh %d -dw 0 %d -dh 0 %d %s '
+                  '>> %s'
+            % (usage_type, qp, input_name, bs_name, width, height,  width, height, additional_cmd,
                    log_name))
     if DEBUG:
         sys.stdout.write(cmdline+'\n')
@@ -182,10 +188,10 @@ def get_resolution_from_name(f):
         return width, height, framerate
 
     resolution_re2 = re.compile(r'(\d+)x(\d+)')
-    r = resolution_re.search(f)
+    r = resolution_re2.search(f)
     if r is not None:
         width = int(r.group(1))
         height = int(r.group(2))
-        return width, height, 0
+        return width, height, 30
 
     return 0, 0, 0

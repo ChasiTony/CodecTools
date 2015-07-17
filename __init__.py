@@ -1,8 +1,8 @@
 
 
 TMP_FOLDER = "/Users/sijchen/WorkingCodes/TestSequences/tmp"
-CAMERA_SEQ_PATH = TMP_FOLDER#"/Users/sijchen/WorkingCodes/TestSequences/CameraTypical"
-SCREEN_SEQ_PATH = TMP_FOLDER #"/Users/sijchen/WorkingCodes/TestSequences/ScreenTypical"
+CAMERA_SEQ_PATH = "/Users/sijchen/WorkingCodes/TestSequences/CameraTypical"
+SCREEN_SEQ_PATH = "/Users/sijchen/WorkingCodes/TestSequences/ScreenTypical"
 
 def get_did_from_resolution(width, height):
     reso = width+height
