@@ -109,29 +109,28 @@ def encoder_log_file(log_file):
 
 
 def calculate_psnr(width, height, original, rec, output_name=None, bs_name=None, frame_rate=None):
-    psnr_path = "/Users/sijchen/WorkingCodes/Tools"
+    psnr_path = "/Users/guangwwa/WorkSpace/Tools/CalculatePSNR/bin"
 
     if bs_name and frame_rate:
-        cmdline = str('%sPSNRStaticd %d %d %s %s 0 0 %s %d Summary -r '
+        cmdline = str('%sCalculatePSNR %d %d %s %s 0 0 %s %d Summary -r '
                     % (psnr_path+ os.sep, width, height, original, rec, bs_name, frame_rate))
     else:
-        cmdline = str('%sPSNRStaticd %d %d %s %s.yuv Summary -r '
+        cmdline = str('%sCalculatePSNR %d %d %s %s Summary -r '
                     % (psnr_path+ os.sep, width, height, original, rec))
     if output_name:
         cmdline += ' 1> %s.log' %(output_name)
 
-    print(cmdline)
-    p = subprocess.Popen(cmdline, stderr=subprocess.PIPE, shell=True)
+    p = subprocess.Popen(cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     result_line = p.communicate()[1]
 
-    match_re_psnr = re.compile(r'Summary,bitrate \(kbps\)\:,(\d+.\d+),total PSNR:,(\d+.\d+),(\d+.\d+),(\d+.\d+)')
+    match_re_psnr = re.compile(r'total\t(.*)\t(.*)\t(.*)')
     r = match_re_psnr.search(result_line)
 
     if r is not None:
-        return float(r.group(1)), float(r.group(2)), float(r.group(3)),float(r.group(4))
-        # return bit_rate, psnr_y, psnr_u, psnr_v
+        return r.group(1), r.group(2), r.group(3)
+       # return psnr_y, psnr_u, psnr_v
     else:
-        return 0,0,0,0
+        return 0,0,0
 
 
 class cBatchPsnr(object):
