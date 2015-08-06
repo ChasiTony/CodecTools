@@ -40,7 +40,7 @@ def process_downsampler_compare(yuv_list):
         bitrate, psnr_y1, psnr_u1, psnr_v1 = CodecUtil.calculate_psnr(width, height, jsvm_out, downsampler1_out)
         bitrate, psnr_y2, psnr_u2, psnr_v2 = CodecUtil.calculate_psnr(width, height, jsvm_out, downsampler2_out)
         #TODO: output psnr into a file, csv is the best
-        
+
 
 if __name__ == '__main__':
     default_yuv_path = __init__.CAMERA_SEQ_PATH

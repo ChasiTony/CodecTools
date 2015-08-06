@@ -44,10 +44,11 @@ def encode_one_yuv(exe_path, one_yuv, usage_type=0, qp=24):
 
         current_test_point = OneTestPoint(qp, fps, bitrate, psnr_y, psnr_u, psnr_v)
 
-
         os.remove(rec_yuv)
     else:
         current_test_point = OneTestPoint(qp, fps, 0, 0, 0, 0)
+        os.remove(bs_name)
+        os.remove(log_name)
 
     os.chdir(current_path)
     return current_test_point
