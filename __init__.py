@@ -1,8 +1,16 @@
 
+import config
 
-TMP_FOLDER = "/Users/sijchen/WorkingCodes/TestSequences/tmp"
-CAMERA_SEQ_PATH = "/Users/sijchen/WorkingCodes/TestSequences/CameraTypical"
-SCREEN_SEQ_PATH = "/Users/sijchen/WorkingCodes/TestSequences/ScreenTypical"
+TMP_FOLDER = config.TMP_FOLDER
+CAMERA_SEQ_PATH = config.CAMERA_SEQ_PATH
+SCREEN_SEQ_PATH = config.SCREEN_SEQ_PATH
+
+JM_PATH=config.JM_PATH
+PSNR_PATH=config.PSNR_PATH
+
+OUT_DATA_PATH = config.OUT_DATA_PATH
+
+
 
 def get_did_from_resolution(width, height):
     reso = width+height

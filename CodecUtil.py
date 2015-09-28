@@ -2,13 +2,21 @@ import os
 import sys
 import subprocess
 import re
-import __init__
+import __init__, config
 
 DEBUG=1
+JM_PATH=config.JM_PATH
 
 def decode(bs, out_yuv):
     cmdline = str('%s %s %s'
                 % ('./h264dec', bs, out_yuv))
+    p = subprocess.Popen(cmdline, stderr=subprocess.PIPE, shell=True)
+    print(p.communicate()[1])
+
+
+def jm_decode(bs, out_yuv):
+    cmdline = str('%s%s%s -i %s -o %s'
+                % (JM_PATH, os.sep, 'ldecod', bs, out_yuv))
     p = subprocess.Popen(cmdline, stderr=subprocess.PIPE, shell=True)
     print(p.communicate()[1])
 
@@ -86,6 +94,25 @@ def call_multilayer_encoder(input_name, usagetype, width, height, frame_rate, ta
     return bs_name, log_name
 
 
+def call_jm_encoder(input_name, usage_type, width, height, qp, additional_cmd=''):
+    bs_name  = input_name.split(os.sep)[-1] + '_br' + str(qp) + '.264'
+    log_name = input_name.split(os.sep)[-1] + '_br' + str(qp) + '.log'
+
+    if os.path.isfile(bs_name):
+        os.remove(bs_name)
+    if os.path.isfile(log_name):
+        os.remove(log_name)
+    cmdline = str('./lencodTm -f encoder.cfg -p InputFile="%s" -p FramesToBeEncoded=300 -p OutputFile="%s" '
+                  ' -p SourceWidth=%d -p SourceHeight=%d -p OutputWidth=%d -p OutputHeight=%d '
+                  ' -p QPISlice=%d -p QPPSlice=%d %s '
+                  '>> %s'
+            % (input_name, bs_name, width, height,  width, height, qp, qp, additional_cmd,
+                   log_name))
+    if DEBUG:
+        sys.stdout.write(cmdline+'\n')
+    p = subprocess.Popen(cmdline, stderr=subprocess.PIPE, shell=True)
+    p.communicate()
+    return bs_name, log_name
 
 
 def encoder_log_file(log_file):
@@ -99,39 +126,70 @@ def encoder_log_file(log_file):
     r = match_re_fps.search(enc_result_line)
     if r is not None:
         fps = float(r.groups()[0])
-
-    if fps==0:
-        print("error!\n")
-        return -1
     return fps
 
 
-
-
-def calculate_psnr(width, height, original, rec, output_name=None, bs_name=None, frame_rate=None):
-    psnr_path = "/Users/sijchen/WorkingCodes/Tools"
+def PSNRStaticd(width, height, original, rec, output_name=None, bs_name=None, frame_rate=None):
+    psnr_path = __init__.PSNR_PATH
 
     if bs_name and frame_rate:
         cmdline = str('%sPSNRStaticd %d %d %s %s 0 0 %s %d Summary -r '
                     % (psnr_path+ os.sep, width, height, original, rec, bs_name, frame_rate))
     else:
-        cmdline = str('%sPSNRStaticd %d %d %s %s.yuv Summary -r '
+        cmdline = str('%sPSNRStaticd %d %d %s %s Summary -r '
                     % (psnr_path+ os.sep, width, height, original, rec))
     if output_name:
         cmdline += ' 1> %s.log' %(output_name)
 
-    print(cmdline)
-    p = subprocess.Popen(cmdline, stderr=subprocess.PIPE, shell=True)
+    p = subprocess.Popen(cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     result_line = p.communicate()[1]
 
-    match_re_psnr = re.compile(r'Summary,bitrate \(kbps\)\:,(\d+.\d+),total PSNR:,(\d+.\d+),(\d+.\d+),(\d+.\d+)')
+    #'0,43.5978,45.7192,46.5856, 1,43.5547,45.7233,46.4990, 2,43.4785,45.6879,46.4916
+    # #Summary,bitrate (kbps):,49107.2000,total PSNR:,43.5437,45.7102,46.5254
+
+    match_re_last_frame = re.compile(r'(\d+),\d+.\d+,\d+.\d+,\d+.\d+\n\nSummary')
+    r = match_re_last_frame.search(result_line)
+    if r is not None:
+        frame_num = int(r.group(1))+1
+    else:
+        frame_num = 0
+
+    match_re_psnr = re.compile(r'Summary,bitrate \(kbps\):,(\d+.\d+),total PSNR:,(\d+.\d+),(\d+.\d+),(\d+.\d+)')
     r = match_re_psnr.search(result_line)
 
     if r is not None:
-        return float(r.group(1)), float(r.group(2)), float(r.group(3)),float(r.group(4))
-        # return bit_rate, psnr_y, psnr_u, psnr_v
+        return frame_num, float(r.group(1)), float(r.group(2)), float(r.group(3)), float(r.group(4))
+       # return bit_rate, psnr_y, psnr_u, psnr_v
     else:
-        return 0,0,0,0
+        return 0, 0,0,0,0
+
+
+def calculate_psnr(width, height, original, rec, output_name=None, bs_name=None, frame_rate=None):
+    psnr_path = __init__.PSNR_PATH
+
+    if bs_name and frame_rate:
+        cmdline = str('%sPSNRStaticd %d %d %s %s 0 0 %s %d Summary -r '
+                    % (psnr_path+ os.sep, width, height, original, rec, bs_name, frame_rate))
+    else:
+        cmdline = str('%sPSNRStaticd %d %d %s %s Summary -r '
+                    % (psnr_path+ os.sep, width, height, original, rec))
+    if output_name:
+        cmdline += ' 1> %s.log' %(output_name)
+
+    p = subprocess.Popen(cmdline, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    result_line = p.communicate()[1]
+
+    #'0,43.5978,45.7192,46.5856, 1,43.5547,45.7233,46.4990, 2,43.4785,45.6879,46.4916
+    # #Summary,bitrate (kbps):,49107.2000,total PSNR:,43.5437,45.7102,46.5254
+
+    match_re_psnr = re.compile(r'total\t(.*)\t(.*)\t(.*)')
+    r = match_re_psnr.search(result_line)
+
+    if r is not None:
+        return r.group(1), r.group(2), r.group(3)
+       # return psnr_y, psnr_u, psnr_v
+    else:
+        return 0,0,0
 
 
 class cBatchPsnr(object):

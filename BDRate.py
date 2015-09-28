@@ -7,9 +7,11 @@ import argparse
 import numpy as np
 from collections import namedtuple
 
+
 DEBUG = 1
 
-OneTestPoint = namedtuple('TestPoint', ['qp', 'fps', 'bit_rate',
+
+OneTestPoint = namedtuple('TestPoint', ['width', 'height', 'frame_rate', 'frame_num', 'qp','file_size', 'fps', 'bit_rate',
                                         'psnr_y', 'psnr_u', 'psnr_v'])
 
 
@@ -82,7 +84,7 @@ def read_results_from_csv(output_name):
         qp = row[name_idx_dict['qp']]
         if not current_dict[name].has_key(qp):
             current_dict[name][qp] = {}
-        current_dict[name][qp] = OneTestPoint(qp,
+        current_dict[name][qp] = OneTestPoint(0, 0, 0, qp, 0,
                                               row[name_idx_dict['fps']],
                                               row[name_idx_dict['bitrate']],
                                               row[name_idx_dict['psnry']],
@@ -96,14 +98,16 @@ def write_testpoint_to_csv(exe_path, result_path, TestPoint_dict):
     exe_name = ((exe_path.split(os.sep))[-1])
     result_name = '%s' %(result_path) + os.sep +'Result_%s.csv' %exe_name
     result_file = open(result_name, 'a+')
-    result_file.write('name,points,qp,fps,bitrate,psnry,psnru,psnrv\n')
+    result_file.write('name,points, width, height, frame_rate, frame_num, qp, file_size, fps,bitrate,psnry,psnru,psnrv\n')
     for yuv_item in TestPoint_dict:
         cur_yuv = sorted(TestPoint_dict[yuv_item])
         for qp in cur_yuv:
             test_point = TestPoint_dict[yuv_item][qp]
-            result_file.write('%s,%d,%d,%f,%f,%f,%f,%f\n'
+            result_file.write('%s,%d,'
+                              '%d,%d,%d,%d,%d,%s,%f,%f,%f,%f,%f\n'
                                %(yuv_item, qp,
-                                 test_point.qp, test_point.fps, test_point.bit_rate,
+                                 test_point.width,test_point.height, test_point.frame_rate,test_point.frame_num, test_point.qp,
+                                 test_point.file_size, test_point.fps, test_point.bit_rate,
                                  test_point.psnr_y, test_point.psnr_u, test_point.psnr_v))
     result_file.close()
 
