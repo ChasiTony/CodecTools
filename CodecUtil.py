@@ -56,8 +56,8 @@ def call_encoder_qp(input_name, usage_type, width, height, qp, additional_cmd=''
     if DEBUG:
         sys.stdout.write(cmdline+'\n')
     p = subprocess.Popen(cmdline, stderr=subprocess.PIPE, shell=True)
-    p.communicate()
-    return bs_name, log_name
+    result_line = p.communicate()[0]
+    return bs_name, log_name, result_line
 
 
 def call_multilayer_encoder(input_name, usagetype, width, height, frame_rate, target_br_list, max_br_list, rc_mode, frame_skip=1):
@@ -253,3 +253,8 @@ def get_resolution_from_name(f):
         return width, height, 30
 
     return 0, 0, 0
+
+
+
+# class CGetOneDataPoint(object):
+

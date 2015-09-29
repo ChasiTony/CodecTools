@@ -8,4 +8,5 @@ JM_TEST = False
 JM_PATH="/Users/sijchen/WorkingCodes/Tools"
 PSNR_PATH="/Users/sijchen/WorkingCodes/Tools"
 
-OUT_DATA_PATH = '/Users/guangwwa/WorkSpace/IOdata/'
+OUT_DATA_PATH = './'
+DEFAULT_OPENH264 = '/Users/sijchen/WorkingCodes/Github/openh264'

@@ -94,9 +94,9 @@ def read_results_from_csv(output_name):
     return current_dict
 
 
-def write_testpoint_to_csv(exe_path, result_path, TestPoint_dict):
+def write_testpoint_to_csv(exe_path, result_path, TestPoint_dict, additional_name=''):
     exe_name = ((exe_path.split(os.sep))[-1])
-    result_name = '%s' %(result_path) + os.sep +'Result_%s.csv' %exe_name
+    result_name = '%s' %(result_path) + os.sep +'Result_%s.csv' %(exe_name+additional_name)
     result_file = open(result_name, 'a+')
     result_file.write('name,points, width, height, frame_rate, frame_num, qp, file_size, fps,bitrate,psnry,psnru,psnrv\n')
     for yuv_item in TestPoint_dict:
