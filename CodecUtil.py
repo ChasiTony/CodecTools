@@ -41,8 +41,8 @@ def call_encoder_rc(input_name, usagetype, width, height, frame_rate, target_br,
     return bs_name, log_name
 
 def call_encoder_qp(input_name, usage_type, width, height, qp, additional_cmd=''):
-    bs_name  = input_name.split(os.sep)[-1] + '_br' + str(qp) + '.264'
-    log_name = input_name.split(os.sep)[-1] + '_br' + str(qp) + '.log'
+    bs_name  = __init__.OUT_DATA_PATH + os.path.sep + os.path.basename(input_name) + '_br' + str(qp) + '.264'  
+    log_name = __init__.OUT_DATA_PATH + os.path.sep + os.path.basename(input_name) + '_br' + str(qp) + '.log'
 
     if os.path.isfile(bs_name):
         os.remove(bs_name)
@@ -127,6 +127,31 @@ def encoder_log_file(log_file):
     if r is not None:
         fps = float(r.groups()[0])
     return fps
+
+def process_encoder_out_info(log_file):
+    log_file = open(log_file,'r')
+    enc_result_line = log_file.read()
+    log_file.close()
+    print(enc_result_line)
+
+    frame_num, encode_time, fps = 0, 0, 0
+
+    match_re_frames = re.compile(r'Frames:\t\t(\d+)')
+    r = match_re_frames.search(enc_result_line)
+    if r is not None:
+        frame_num = int(r.groups()[0])
+
+    match_re_time = re.compile(r'encode time:\t(\d+.\d+) sec')
+    r = match_re_time.search(enc_result_line)
+    if r is not None:
+        encode_time = float(r.groups()[0])
+
+    match_re_fps = re.compile(r'FPS:\t\t(\d+.\d+) fps')
+    r = match_re_fps.search(enc_result_line)
+    if r is not None:
+        fps = float(r.groups()[0])
+
+    return frame_num, encode_time, fps
 
 
 def PSNRStaticd(width, height, original, rec, output_name=None, bs_name=None, frame_rate=None):

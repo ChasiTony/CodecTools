@@ -31,9 +31,11 @@ def test_downsampler(yuv_in, win, hin, yuv_out_general, yuv_out_specific, wout, 
     
 
 def process_downsampler_compare(yuv_list,downscale):
-    f1 = open(__init__.OUT_DATA_PATH + 'psnrCompare1' + '_%d' %downscale + '.csv', 'w')
-    f2 = open(__init__.OUT_DATA_PATH + 'psnrCompare2' + '_%d' %downscale + '.csv', 'w')
-    f3 = open(__init__.OUT_DATA_PATH + 'psnrCompare3' + '_%d' %downscale + '.csv', 'w')
+    out_path = __init__.OUT_DATA_PATH
+
+    f1 = open(out_path + os.sep + 'psnrCompare1' + '_%d' %downscale + '.csv', 'w')
+    f2 = open(out_path + os.sep + 'psnrCompare2' + '_%d' %downscale + '.csv', 'w')
+    f3 = open(out_path + os.sep + 'psnrCompare3' + '_%d' %downscale + '.csv', 'w')
     f1.write('filename,psnr_y,psnr_u,psnr_v\n')
     f2.write('filename,psnr_y,psnr_u,psnr_v\n')
     f3.write('filename,psnr_y,psnr_u,psnr_v\n')
@@ -44,24 +46,26 @@ def process_downsampler_compare(yuv_list,downscale):
         height_out = height/downscale
         out_yuv_resolution = '%d' %width_out + 'x' + '%d' %height_out
 
-        jsvm_out = __init__.OUT_DATA_PATH + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downConvert.yuv'
-        downsampler1_out = __init__.OUT_DATA_PATH + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler1.yuv'
-        downsampler2_out = __init__.OUT_DATA_PATH + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler2.yuv'
+        jsvm_out = out_path + os.sep + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downConvert.yuv'
+        downsampler1_out = out_path + os.sep + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler1.yuv'
+        downsampler2_out = out_path + os.sep + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler2.yuv'
 
         jsvm_downsampler(width, height, one_yuv, width_out, height_out, jsvm_out)
         test_downsampler(one_yuv, width, height, downsampler1_out, downsampler2_out, width_out, height_out)
 
         # psnr ing
+        # ??? should the parameter output_name be None?
         frame_num, bitrate, psnr_y1, psnr_u1, psnr_v1 = CodecUtil.PSNRStaticd(width_out, height_out, jsvm_out, downsampler1_out,
-                                                             downsampler1_out+'.log')
-        f1.write('%s,%s,%s,%s\n' %(os.path.basename(one_yuv), psnr_y1, psnr_u1, psnr_v1))
+				downsampler1_out+'.log')
+        f1.write('%s,%f,%f,%f\n' %(os.path.basename(one_yuv), psnr_y1, psnr_u1, psnr_v1))
+
         frame_num, bitrate, psnr_y2, psnr_u2, psnr_v2 = CodecUtil.PSNRStaticd(width_out, height_out, jsvm_out, downsampler2_out,
-                                                             downsampler2_out+'.log')
-        psnr_y2, psnr_u2, psnr_v2 = CodecUtil.calculate_psnr(width_out, height_out, jsvm_out, downsampler2_out)
-        f2.write('%s,%s,%s,%s\n' %(os.path.basename(one_yuv), psnr_y2, psnr_u2, psnr_v2))
+				downsampler2_out+'.log')
+        f2.write('%s,%f,%f,%f\n' %(os.path.basename(one_yuv), psnr_y2, psnr_u2, psnr_v2))
+
         frame_num, bitrate, psnr_y3, psnr_u3, psnr_v3 = CodecUtil.PSNRStaticd(width_out, height_out, downsampler1_out, downsampler2_out,
-                                                             downsampler1_out+downsampler2_out+'.log')
-        f3.write('%s,%s,%s,%s\n' %(os.path.basename(one_yuv), psnr_y3, psnr_u3, psnr_v3))
+				downsampler1_out+downsampler2_out+'.log')
+        f3.write('%s,%f,%f,%f\n' %(os.path.basename(one_yuv), psnr_y3, psnr_u3, psnr_v3))
         #TODO: output psnr into a file, csv is the best
 
     f1.close()
@@ -71,6 +75,7 @@ def process_downsampler_compare(yuv_list,downscale):
 
 def process_compare_enc(yuv_list,downscale):
     TestPoint_dict = {}
+    out_path = __init__.OUT_DATA_PATH
 
     for one_yuv in yuv_list:
         width, height, frame_rate = CodecUtil.get_resolution_from_name(one_yuv)
@@ -78,9 +83,9 @@ def process_compare_enc(yuv_list,downscale):
         height_out = height/downscale
         out_yuv_resolution = '%d' %width_out + 'x' + '%d' %height_out
 
-        jsvm_out = __init__.OUT_DATA_PATH + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downConvert.yuv'
-        downsampler1_out = __init__.OUT_DATA_PATH + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler1.yuv'
-        downsampler2_out = __init__.OUT_DATA_PATH + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler2.yuv'
+        jsvm_out = out_path + os.sep + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downConvert.yuv'
+        downsampler1_out = out_path + os.sep + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler1.yuv'
+        downsampler2_out = out_path + os.sep + os.path.basename(one_yuv)[0:-4] + '_to_' + out_yuv_resolution + '_downsampler2.yuv'
 
         # encoder three yuv files
         qp = 24
@@ -88,18 +93,21 @@ def process_compare_enc(yuv_list,downscale):
         current_path = os.getcwd()
         os.chdir(H264CODEC_PATH)
         for source in (jsvm_out, downsampler1_out, downsampler2_out):
-            bs_name, log_name, result_line = CodecUtil.call_encoder_qp(current_path+os.sep+source, usage_type, width_out, height_out, qp)
-            fps = CodecUtil.encoder_log_file(log_name)
+            bs_name, log_name, result_line = CodecUtil.call_encoder_qp(source, usage_type, width_out, height_out, qp)
 
-            rec_yuv = bs_name+'_dec.yuv'
+            rec_yuv = bs_name[0:-4] +'_dec.yuv'
             CodecUtil.decode(bs_name, rec_yuv)
 
+            # encoder information 
+            frames, encode_time, fps = CodecUtil.process_encoder_out_info(log_name)
+
             # psnr ing
+            # ??? should the parameter output_name be None?
             frame_num, bitrate, psnr_y, psnr_u, psnr_v = CodecUtil.PSNRStaticd(width, height, one_yuv, rec_yuv,
-                                                             rec_yuv+'.log', bs_name, frame_rate)
+					rec_yuv+'.log', bs_name, frame_rate)
 
             file_size = os.path.getsize(bs_name)
-            current_test_point = OneTestPoint(width, height, frame_rate, frame_num, qp, file_size, fps, bitrate, psnr_y, psnr_u, psnr_v)
+            current_test_point = OneTestPoint(width, height, frame_rate, frames, qp, file_size, encode_time, fps, bitrate, psnr_y, psnr_u, psnr_v)
 
             if not TestPoint_dict.has_key(source):
                 TestPoint_dict[source] = {}
@@ -107,20 +115,18 @@ def process_compare_enc(yuv_list,downscale):
                 TestPoint_dict[source][qp] = {}
             TestPoint_dict[source][qp] = current_test_point
 
-            os.remove(rec_yuv)
-
         os.chdir(current_path)
 
-    write_testpoint_to_csv(__init__.OUT_DATA_PATH, os.getcwd(), TestPoint_dict, str('encCompare' + '_%d' %downscale) )
+    write_testpoint_to_csv(os.getcwd(), __init__.OUT_DATA_PATH, TestPoint_dict, str('encCompare' + '_%d' %downscale) )
 
 if __name__ == '__main__':
     #set you search path in config.py
     argParser = argparse.ArgumentParser()
-    argParser.add_argument("exepath", nargs='?', help="exe path")
+    argParser.add_argument("-exepath", nargs='?', help="exe path")
     argParser.add_argument("-jsvm", nargs='?', help="jsvm downconvert path")
     argParser.add_argument("-yuvpath", nargs='?', default=None, help="yuv path")
     argParser.add_argument("-usagetype", nargs='?', default=None, help="camera=0 or screen=1")
-    argParser.add_argument("-downscale", nargs='?', default=4, help="downscale")
+    argParser.add_argument("-downscale", nargs='?', default=4, type=int, help="downscale")
     argParser.add_argument("-out", nargs='?', default=None, help="set out path")
 
     # set downscale
@@ -174,21 +180,6 @@ if __name__ == '__main__':
 
     anchor_dict = process_downsampler_compare(yuv_list,downscale)
     process_compare_enc(yuv_list,downscale)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

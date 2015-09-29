@@ -11,7 +11,7 @@ from collections import namedtuple
 DEBUG = 1
 
 
-OneTestPoint = namedtuple('TestPoint', ['width', 'height', 'frame_rate', 'frame_num', 'qp','file_size', 'fps', 'bit_rate',
+OneTestPoint = namedtuple('TestPoint', ['width', 'height', 'frame_rate', 'frame_num', 'qp','file_size', 'encode_time', 'fps', 'bit_rate',
                                         'psnr_y', 'psnr_u', 'psnr_v'])
 
 
@@ -96,18 +96,19 @@ def read_results_from_csv(output_name):
 
 def write_testpoint_to_csv(exe_path, result_path, TestPoint_dict, additional_name=''):
     exe_name = ((exe_path.split(os.sep))[-1])
-    result_name = '%s' %(result_path) + os.sep +'Result_%s.csv' %(exe_name+additional_name)
+    result_name = '%s' %(result_path) + os.sep +'Result_%s' %(additional_name) + '.csv'
     result_file = open(result_name, 'a+')
-    result_file.write('name,points, width, height, frame_rate, frame_num, qp, file_size, fps,bitrate,psnry,psnru,psnrv\n')
+    result_file.write('name,points, width, height, frame_rate, frame_num, qp, file_size, encode_time, fps,bitrate,psnry,psnru,psnrv\n')
     for yuv_item in TestPoint_dict:
         cur_yuv = sorted(TestPoint_dict[yuv_item])
         for qp in cur_yuv:
             test_point = TestPoint_dict[yuv_item][qp]
+            filename = os.path.basename(yuv_item)
             result_file.write('%s,%d,'
-                              '%d,%d,%d,%d,%d,%s,%f,%f,%f,%f,%f\n'
-                               %(yuv_item, qp,
+                              '%d,%d,%d,%d,%d,%s,%s,%f,%f,%f,%f,%f\n'
+                               %(filename, qp,
                                  test_point.width,test_point.height, test_point.frame_rate,test_point.frame_num, test_point.qp,
-                                 test_point.file_size, test_point.fps, test_point.bit_rate,
+                                 test_point.file_size, test_point.encode_time, test_point.fps, test_point.bit_rate,
                                  test_point.psnr_y, test_point.psnr_u, test_point.psnr_v))
     result_file.close()
 
